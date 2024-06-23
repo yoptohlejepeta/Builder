@@ -1,22 +1,43 @@
-use clap::Parser;
+mod project;
+mod functions;
 
-/// Simple program to greet a person
+use clap::{Parser, Subcommand};
+use project::ProjectType;
+use functions::get_ignore_file;
+
+/// Command line arguments structure
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    /// Name of the person to greet
-    #[arg(short, long)]
-    name: String,
+    /// Action to perform
+    #[command(subcommand)]
+    command: Command,
 
-    /// Number of times to greet
-    #[arg(short, long, default_value_t = 1)]
-    count: u8,
+    /// Language
+    #[arg(short, long, default_value = "Python")]
+    language: String,
 }
 
-fn main() {
+/// Commands that can be executed
+#[derive(Subcommand, Debug)]
+enum Command {
+    /// Create files for a new project
+    New {
+        /// Type of project to create
+        #[arg(value_parser = clap::value_parser!(ProjectType))]
+        project: ProjectType,
+    },
+}
+
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
-    for _ in 0..args.count {
-        println!("Hello {}!", args.name);
-    }
+    match args.command {
+        Command::New { project } => {
+            println!("Initializing project: {}", project);
+            // create gitignore file
+            let _ = get_ignore_file(args.language).await; // TODO: first letter capitilize
+        }
+    }    
 }
